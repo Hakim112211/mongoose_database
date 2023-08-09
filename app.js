@@ -1,6 +1,13 @@
 const express = require('express');
 const expressLayouts = require('express-ejs-layouts');
 
+const session = require('express-session');
+const cookieParser = require('cookie-parser');
+const flash = require('connect-flash');
+
+require('./utils/db');
+const Contact = require('./model/contact');
+
 const app = express();
 const port = 3000;
 
@@ -9,6 +16,18 @@ app.set('view engine', 'ejs');
 app.use(expressLayouts);
 app.use(express.static('public'));
 app.use(express.urlencoded( {extended: true}));
+
+// konfigurasi flash
+app.use(cookieParser('secret'));
+app.use(
+	session({
+		cookie: { maxAge: 6000 },
+		secret: 'secret',
+		resave: true,
+		saveUninitialized: true,
+	})
+);
+app.use(flash());
 
 
 // halaman home
@@ -44,14 +63,29 @@ app.get('/about', (req, res) => {
 });
 
 // halaman contact
-app.get('/contact', (req, res) => {
-	const contacts = loadContact();
+app.get('/contact', async (req, res) => {
+	// contact.find().then((contact) => {
+	// 	res.send(contact);
+	// });
+
+	const contacts = await contact.find();
 	
 	res.render('contact', { 
 		layout: 'layouts/main-layout',
 		title: 'Halaman Contactt',
 		contacts,
 		msg: req.flash('msg'),
+	});
+});
+
+// halaman detail contact
+app.get('/contact/:nama', async (req, res) => {
+	const contact = await Contact.findOne({ nama : req.params.nama });
+
+	res.render('detail', {
+		title: 'Halaman Detail Contact',
+		layout: 'layouts/main-layout',
+		contact,
 	});
 });
 
